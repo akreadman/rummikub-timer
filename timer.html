@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d3b2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rummikub">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>Rummikub Timer</title>
+<style>
+  body { margin:0; height:100vh; height:100dvh; box-sizing:border-box; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:system-ui,sans-serif; background:#1d3b2a; color:#fff; }
+  #order { display:flex; gap:14px; margin-bottom:20px; align-items:center; }
+  .p { display:flex; flex-direction:column; align-items:center; opacity:.45; transition:all .2s; }
+  .p.active { opacity:1; transform:scale(1.15); }
+  .icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; border:3px solid #fff; }
+  .p.active .icon { box-shadow:0 0 0 4px #f4c430; }
+  .name { -webkit-user-select:text; user-select:text; margin-top:6px; font-size:14px; outline:none; min-width:40px; text-align:center; }
+  .arrow { opacity:.5; font-size:20px; }
+  #now { display:flex; align-items:center; gap:14px; font-size:4vw; font-weight:600; margin-bottom:6px; }
+  #now .icon { width:6vw; height:6vw; font-size:3vw; }
+  #time { font-size:24vw; font-weight:700; font-variant-numeric:tabular-nums; line-height:1; }
+  #time.done { color:#ff5a5a; }
+  .row { display:flex; gap:16px; margin-top:28px; }
+  button { font-size:5vw; padding:12px 32px; border:none; border-radius:12px; cursor:pointer; }
+  #toggle { background:#f4c430; } #reset { background:#ddd; } #next { background:#8fd19e; }
+  .rm { font-size:14px; opacity:.7; cursor:pointer; margin-top:2px; }
+  #add { font-size:24px; width:52px; height:52px; padding:0; border-radius:50%; background:transparent; color:#fff; border:3px dashed #fff; margin-left:6px; }
+  .hint { margin-top:14px; font-size:13px; opacity:.6; }
+</style>
+</head>
+<body>
+  <div id="order"></div>
+  <div id="now"></div>
+  <div id="time">1:00</div>
+  <div class="row">
+    <button id="toggle">Start</button>
+    <button id="reset">Reset</button>
+    <button id="next">Next player</button>
+  </div>
+  <div class="hint">Click a name to rename, &times; to remove a player, + to add one.</div>
+<script>
+  const START = 60; // seconds per turn
+  const COLORS = ['#d62828','#1d4ed8','#f08c00','#222222','#7b2cbf','#2a9d8f','#e76f51','#6c757d'];
+  const players = [ { name:'George' }, { name:'Daddy' }, { name:'Oma' } ];
+  let current = 0, left = START, timer = null;
+  const t = document.getElementById('time'), btn = document.getElementById('toggle');
+  const order = document.getElementById('order'), now = document.getElementById('now');
+  const icon = p => `<div class="icon" style="background:${p.color}">${(p.name.trim()[0]||'?').toUpperCase()}</div>`;
+  function drawPlayers() {
+    players.forEach((p,i) => p.color = COLORS[i % COLORS.length]);
+    if (current >= players.length) current = 0;
+    order.innerHTML = players.map((p,i) =>
+      (i ? '<span class="arrow">&rarr;</span>' : '') +
+      `<div class="p ${i===current?'active':''}">${icon(p)}<div class="name" contenteditable="true" data-i="${i}">${p.name}</div>` +
+      (players.length > 1 ? `<span class="rm" data-i="${i}" title="Remove player">&times;</span>` : '') + `</div>`
+    ).join('') + '<button id="add" title="Add player">+</button>';
+    now.innerHTML = icon(players[current]) + `<span>${players[current].name}'s turn</span>`;
+    order.querySelectorAll('.name').forEach(el => {
+      el.onblur = () => { players[el.dataset.i].name = el.textContent.trim() || 'Player ' + (+el.dataset.i + 1); drawPlayers(); };
+      el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } };
+    });
+    order.querySelectorAll('.rm').forEach(el => el.onclick = () => {
+      const i = +el.dataset.i; players.splice(i, 1);
+      if (i < current || current >= players.length) current = Math.max(0, current - 1);
+      drawPlayers();
+    });
+    document.getElementById('add').onclick = () => { players.push({ name:'Player ' + (players.length + 1) }); drawPlayers(); };
+  }
+  function show() {
+    t.textContent = Math.floor(left/60) + ':' + String(left%60).padStart(2,'0');
+    t.classList.toggle('done', left === 0);
+  }
+  function stop() { clearInterval(timer); timer = null; btn.textContent = 'Start'; }
+  btn.onclick = () => {
+    if (timer) return stop();
+    if (left === 0) left = START;
+    btn.textContent = 'Stop';
+    timer = setInterval(() => { left--; show(); if (left <= 0) stop(); }, 1000);
+    show();
+  };
+  document.getElementById('reset').onclick = () => { stop(); left = START; show(); };
+  document.getElementById('next').onclick = () => { stop(); left = START; current = (current + 1) % players.length; show(); drawPlayers(); };
+  drawPlayers(); show();
+</script>
+</body>
+</html>
