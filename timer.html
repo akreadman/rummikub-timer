@@ -76,15 +76,16 @@
     t.classList.toggle('done', left === 0);
   }
   function stop() { clearInterval(timer); timer = null; btn.textContent = 'Start'; }
-  btn.onclick = () => {
-    if (timer) return stop();
+  function start() {
+    if (timer) return;
     if (left === 0) left = START;
     btn.textContent = 'Stop';
     timer = setInterval(() => { left--; show(); if (left <= 0) stop(); }, 1000);
     show();
-  };
+  }
+  btn.onclick = () => { if (timer) stop(); else start(); };
   document.getElementById('reset').onclick = () => { stop(); left = START; show(); };
-  document.getElementById('next').onclick = () => { stop(); left = START; current = (current + 1) % players.length; show(); drawPlayers(); };
+  document.getElementById('next').onclick = () => { stop(); left = START; current = (current + 1) % players.length; show(); drawPlayers(); start(); };
   drawPlayers(); show();
 </script>
 </body>
