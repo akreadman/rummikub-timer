@@ -14,19 +14,20 @@
 <title>Rummikub Timer</title>
 <style>
   body { margin:0; height:100vh; height:100dvh; box-sizing:border-box; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:system-ui,sans-serif; background:#1d3b2a; color:#fff; }
-  #order { display:flex; gap:14px; margin-bottom:20px; align-items:center; }
+  #order { display:flex; gap:14px; margin-bottom:min(20px, 2vh); align-items:center; }
   .p { display:flex; flex-direction:column; align-items:center; opacity:.45; transition:all .2s; }
   .p.active { opacity:1; transform:scale(1.15); }
   .icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; border:3px solid #fff; }
   .p.active .icon { box-shadow:0 0 0 4px #f4c430; }
   .name { -webkit-user-select:text; user-select:text; margin-top:6px; font-size:14px; outline:none; min-width:40px; text-align:center; }
   .arrow { opacity:.5; font-size:20px; }
-  #now { display:flex; align-items:center; gap:14px; font-size:4vw; font-weight:600; margin-bottom:6px; }
-  #now .icon { width:6vw; height:6vw; font-size:3vw; }
-  #time { font-size:24vw; font-weight:700; font-variant-numeric:tabular-nums; line-height:1; }
-  #time.done { color:#ff5a5a; }
-  .row { display:flex; gap:16px; margin-top:28px; }
-  button { font-size:5vw; padding:12px 32px; border:none; border-radius:12px; cursor:pointer; }
+  #now { display:flex; align-items:center; gap:14px; font-size:min(4vw, 5vh); font-weight:600; margin-bottom:6px; }
+  #now .icon { width:min(6vw, 7vh); height:min(6vw, 7vh); font-size:min(3vw, 3.5vh); }
+  .clock { font-size:min(24vw, 18vh); font-weight:700; font-variant-numeric:tabular-nums; line-height:1; }
+  .clock.done { color:#ff5a5a; }
+  #timeFlip { transform:rotate(180deg); margin-bottom:min(16px, 2vh); }
+  .row { display:flex; gap:min(16px, 3vw); margin-top:min(28px, 3vh); max-width:96vw; }
+  button { font-size:clamp(16px, min(5vw, 6vh), 48px); padding:min(12px, 1.5vh) min(32px, 4vw); border:none; border-radius:12px; cursor:pointer; }
   #toggle { background:#f4c430; } #reset { background:#ddd; } #next { background:#8fd19e; }
   .rm { font-size:14px; opacity:.7; cursor:pointer; margin-top:2px; }
   #add { font-size:24px; width:52px; height:52px; padding:0; border-radius:50%; background:transparent; color:#fff; border:3px dashed #fff; margin-left:6px; }
@@ -34,9 +35,10 @@
 </style>
 </head>
 <body>
+  <div id="timeFlip" class="clock" aria-hidden="true">1:00</div>
   <div id="order"></div>
   <div id="now"></div>
-  <div id="time">1:00</div>
+  <div id="time" class="clock">1:00</div>
   <div class="row">
     <button id="toggle">Start</button>
     <button id="reset">Reset</button>
@@ -71,9 +73,10 @@
     });
     document.getElementById('add').onclick = () => { players.push({ name:'Player ' + (players.length + 1) }); drawPlayers(); };
   }
+  const flip = document.getElementById('timeFlip');
   function show() {
-    t.textContent = Math.floor(left/60) + ':' + String(left%60).padStart(2,'0');
-    t.classList.toggle('done', left === 0);
+    const txt = Math.floor(left/60) + ':' + String(left%60).padStart(2,'0');
+    [t, flip].forEach(el => { el.textContent = txt; el.classList.toggle('done', left === 0); });
   }
   function stop() { clearInterval(timer); timer = null; btn.textContent = 'Start'; }
   function start() {
