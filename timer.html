@@ -31,6 +31,17 @@
   #toggle { background:#f4c430; } #reset { background:#ddd; } #next { background:#8fd19e; }
   .rm { font-size:14px; opacity:.7; cursor:pointer; margin-top:2px; }
   #add { font-size:24px; width:52px; height:52px; padding:0; border-radius:50%; background:transparent; color:#fff; border:3px dashed #fff; margin-left:6px; }
+  #alert { position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:space-around; background:rgba(16,36,25,.97); z-index:10; cursor:pointer; }
+  #alert.show { display:flex; animation:fadein .25s ease-out; }
+  .msg { display:flex; flex-direction:column; align-items:center; gap:min(14px,2vh); }
+  .msg.flip { transform:rotate(180deg); }
+  .tile { position:relative; width:min(26vw,20vh); height:min(34vw,26vh); background:#f7f1e3; border-radius:14px; box-shadow:0 8px 0 #c9bfa6, 0 14px 30px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; animation:bounce .7s ease-in-out infinite alternate; }
+  .tile span { font-size:min(18vw,14vh); font-weight:800; color:#d62828; line-height:1; }
+  .big { padding:0 16px; line-height:1.15; font-size:min(8vw,6vh); font-weight:800; color:#f4c430; text-align:center; text-shadow:0 3px 0 rgba(0,0,0,.35); }
+  .small { font-size:min(4vw,3vh); opacity:.8; }
+  @media (orientation: landscape) { #alert { flex-direction:row; } .tile { width:min(14vw,22vh); height:min(18vw,30vh); } .tile span { font-size:min(10vw,16vh); } .big { font-size:min(4vw,7vh); } .small { font-size:min(2vw,4vh); } }
+  @keyframes bounce { from { transform:translateY(0) rotate(-6deg); } to { transform:translateY(-18px) rotate(6deg); } }
+  @keyframes fadein { from { opacity:0; transform:scale(1.05); } to { opacity:1; transform:none; } }
   .hint { margin-top:14px; font-size:13px; opacity:.6; }
 </style>
 </head>
@@ -43,6 +54,10 @@
     <button id="toggle">Start</button>
     <button id="reset">Reset</button>
     <button id="next">Next player</button>
+  </div>
+  <div id="alert" role="alert">
+    <div class="msg flip" aria-hidden="true"><div class="big"></div><div class="tile"><span>?</span></div></div>
+    <div class="msg"><div class="tile"><span>?</span></div><div class="big"></div><div class="small">Tap anywhere to close</div></div>
   </div>
   <div class="hint">Click a name to rename, &times; to remove a player, + to add one.</div>
 <script>
@@ -78,16 +93,25 @@
     const txt = Math.floor(left/60) + ':' + String(left%60).padStart(2,'0');
     [t, flip].forEach(el => { el.textContent = txt; el.classList.toggle('done', left === 0); });
   }
+  const alertBox = document.getElementById('alert');
+  function timeUp() {
+    alertBox.querySelectorAll('.big').forEach(el => el.innerHTML = "Time's up, " + players[current].name + "!<br>Draw a tile!");
+    alertBox.classList.add('show');
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  }
+  function hideAlert() { alertBox.classList.remove('show'); }
+  alertBox.onclick = hideAlert;
   function stop() { clearInterval(timer); timer = null; btn.textContent = 'Start'; }
   function start() {
+    hideAlert();
     if (timer) return;
     if (left === 0) left = START;
     btn.textContent = 'Stop';
-    timer = setInterval(() => { left--; show(); if (left <= 0) stop(); }, 1000);
+    timer = setInterval(() => { left--; show(); if (left <= 0) { stop(); timeUp(); } }, 1000);
     show();
   }
   btn.onclick = () => { if (timer) stop(); else start(); };
-  document.getElementById('reset').onclick = () => { stop(); left = START; show(); };
+  document.getElementById('reset').onclick = () => { hideAlert(); stop(); left = START; show(); };
   document.getElementById('next').onclick = () => { stop(); left = START; current = (current + 1) % players.length; show(); drawPlayers(); start(); };
   drawPlayers(); show();
 </script>
